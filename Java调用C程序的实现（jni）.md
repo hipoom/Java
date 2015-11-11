@@ -1,6 +1,6 @@
 # **Java调用C/C++程序的实现（jni）**
 ---
-
+github好像不支持流程图，移步csdn看吧：
 **转载请注明出处：**http://blog.csdn.net/H28496/article/details/49787459
 
 ## **1. 关于本地方法**

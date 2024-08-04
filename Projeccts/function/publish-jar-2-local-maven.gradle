@@ -1,0 +1,165 @@
+// ========================================================================
+// 发布 *.jar 产物到本地的 maven 仓库.
+// ========================================================================
+
+apply plugin: "maven-publish"
+apply plugin: "signing"
+
+/**
+ * 返回仓库的本地路径。
+ */
+static String getLocalRepositoryDirectory() {
+    return "/Users/zhp/Workspace/hipoom-maven-2";
+}
+
+/**
+ * 模块名.
+ */
+static String getProductArtifactId() {
+    return "function"
+}
+
+/**
+ * 版本号。
+ */
+static String getProductVersion() {
+    return "0.0.1"
+}
+
+// 配置签名，上传到 central maven 必须要签名
+signing {
+    sign(publishing.publications)
+}
+
+
+
+/* ======================================================= */
+/* Task Methods                                            */
+/* ======================================================= */
+
+/**
+ * 注册 sourcesJar 任务，否则会没有 sources.jar 文件.
+ */
+tasks.register('sourcesJar', Jar) {
+    dependsOn classes
+
+    // gradle 8.0 以下用 classifier
+    // classifier = 'sources'
+
+    // gradle 8.0 及以上用 archiveClassifier
+    archiveClassifier = 'sources'
+
+    from sourceSets.main.allSource
+}
+
+/**
+ * 注册 javadocJar 任务，否则会没有 javaDoc.jar 文件.
+ */
+tasks.register('javadocJar', Jar) {
+    dependsOn javadoc
+
+    // gradle 8.0 以下用 classifier
+    // classifier = 'javadoc'
+
+    // gradle 8.0 及以上用 archiveClassifier
+    archiveClassifier = 'javadoc'
+
+    from javadoc.destinationDir
+}
+
+ // 解决javadoc打包乱码
+javadoc {
+    options {
+        encoding "UTF-8"
+        charSet 'UTF-8'
+        author true
+        version true
+        title "Hipoom Java Doc"
+    }
+}
+
+publishing {
+    // 定义目标仓库
+    repositories {
+        maven {
+            url getLocalRepositoryDirectory()
+        }
+    }
+
+    // 定义产物
+    publications { PublicationContainer publicationContainer ->
+        hipoomLocal(MavenPublication) {
+            // 基本信息
+            groupId 'com.hipoom'
+            artifactId getProductArtifactId()
+            version getProductVersion()
+
+            //打包源码和class
+            from components.java
+
+            // 增加 sources.jar 和 javadocs.jar
+            artifact sourcesJar
+            artifact javadocJar
+
+            // 追加其他信息
+            pom {
+                name = "function"
+                description = "some functions for java."
+                url = "sorry, no url provided."
+
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                    developers {
+                        developer {
+                            id = "hipoom"
+                            name = "hipoom"
+                            email = "no email provided"
+                        }
+                        scm {
+                            connection = "no-connection"
+                            developerConnection = "no-developerConnection"
+                            url = "no-url"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/* ======================================================= */
+/* Private Methods                                         */
+/* ======================================================= */
+
+/**
+ * 获取 local.properties 文件.
+ * @return File
+ */
+File getLocalProperties() {
+    File localProperties = rootProject.file("local.properties")
+    if (!localProperties.exists()) {
+        throw new IllegalStateException("[ERROR] 找不到 local.properties 文件.")
+    }
+    return localProperties
+}
+
+/**
+ * 从 local.properties 中读取 key 对应的值。
+ */
+String readLocalProperty(String key) {
+    File file = getLocalProperties()
+    InputStream is = file.newDataInputStream()
+    Properties properties = new Properties()
+    properties.load(is)
+
+    Set<String> keys = properties.stringPropertyNames()
+    if (!keys.contains(key)) {
+        return null
+    }
+
+    return properties.getProperty(key)
+}

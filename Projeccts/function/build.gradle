@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.hipoom'
+version = '0.0.2'
+
+apply from: "publish-jar-2-local-maven.gradle"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}

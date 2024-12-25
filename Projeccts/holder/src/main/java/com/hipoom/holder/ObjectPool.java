@@ -39,12 +39,11 @@ public class ObjectPool<T> {
 
     public T obtain() {
         synchronized (objects) {
-            if (objects.isEmpty()) {
-                return creator.invoke();
+            if (!objects.isEmpty()) {
+                return objects.poll();
             }
-
-            return objects.poll();
         }
+        return creator.invoke();
     }
 
     public void recycle(@Nullable T obj) {

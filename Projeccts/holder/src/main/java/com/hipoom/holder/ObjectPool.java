@@ -13,46 +13,61 @@ import kotlin.jvm.functions.Function0;
  */
 public class ObjectPool<T> {
 
-    /* ======================================================= */
-    /* Fields                                                  */
-    /* ======================================================= */
+   /* ======================================================= */
+   /* Fields                                                  */
+   /* ======================================================= */
 
-    private final Queue<T> objects = new LinkedList<>();
+   private final Queue<T> objects = new LinkedList<>();
 
-    private final Function0<T> creator;
+   private final Function0<T> creator;
 
-
-
-    /* ======================================================= */
-    /* Constructors or Instance Creator                        */
-    /* ======================================================= */
-
-    public ObjectPool(@NonNull Function0<T> creator) {
-        this.creator = creator;
-    }
+   private final int maxCount;
 
 
 
-    /* ======================================================= */
-    /* Public Methods                                          */
-    /* ======================================================= */
+   /* ======================================================= */
+   /* Constructors or Instance Creator                        */
+   /* ======================================================= */
 
-    public T obtain() {
-        synchronized (objects) {
-            if (!objects.isEmpty()) {
-                return objects.poll();
-            }
-        }
-        return creator.invoke();
-    }
+   public ObjectPool(int maxCount, @NonNull Function0<T> creator) {
+      this.creator = creator;
+      this.maxCount = maxCount;
+   }
 
-    public void recycle(@Nullable T obj) {
-        if (obj == null) {
+
+
+   /* ======================================================= */
+   /* Public Methods                                          */
+   /* ======================================================= */
+
+   /**
+    * 获取一个新的对象。
+    * 如果缓存池中有，那么就从缓存池中获取，否则，调用 creator 新建一个。
+    */
+   public T obtain() {
+      synchronized (objects) {
+         if (!objects.isEmpty()) {
+            return objects.poll();
+         }
+      }
+      return creator.invoke();
+   }
+
+   /**
+    * 回收一个对象。
+    * 如果当前缓存池没有满，则回收到缓存池中，否则放弃回收。
+    */
+   public void recycle(@Nullable T obj) {
+      if (obj == null) {
+         return;
+      }
+      synchronized (objects) {
+         // 如果当前已经回收了超过限制数量的对象，就不再回收了。
+         if (objects.size() >= maxCount) {
             return;
-        }
-        synchronized (objects) {
-            objects.offer(obj);
-        }
-    }
+         }
+         objects.offer(obj);
+      }
+   }
 
 }

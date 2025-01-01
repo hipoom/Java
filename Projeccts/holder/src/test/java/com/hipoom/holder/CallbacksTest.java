@@ -60,8 +60,6 @@ class CallbacksTest {
         }
     }
 
-
-
     @Test
     public void find() {
         class Temp {
@@ -94,6 +92,51 @@ class CallbacksTest {
         List<Temp> removed = callbacks.removeIf(it -> it.name.equals("a"));
         assert removed.size() == 1;
         assert removed.get(0) == a;
+    }
+
+    @Test
+    public void testCopyCallbacksThen() throws InterruptedException {
+        Callbacks<Runnable> callbacks = new Callbacks<>();
+
+        Runnable a = () -> {
+            System.out.println("Task a begin --->");
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("Task a end <---");
+        };
+
+        Runnable b = () -> {
+            System.out.println("Task b begin --->");
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("Task b end <---");
+        };
+
+        callbacks.add(1, a);
+        callbacks.add(2, b);
+
+        // 模拟两个线程同时 forEach，理应在 < 12 秒的时间内完成。
+        new Thread(() -> {
+            callbacks.forEach((c) -> {
+                c.run();
+                return true;
+            });
+        }).start();
+
+        new Thread(() -> {
+            callbacks.forEach((c) -> {
+                c.run();
+                return true;
+            });
+        }).start();
+
+        Thread.sleep(12_000);
     }
 
 }

@@ -93,6 +93,8 @@ public class Callbacks<C> {
 
     /**
      * 移除所有满足条件 predication 的回调。 并返回被移除的所有元素。
+     *
+     * @param predication 满足这个条件的，会被移除。由于在遍历时会 lock 住内部持有的 callbacks 对象，所以 predication 不应该执行太长时间。
      */
     @NonNull
     public List<C> removeIf(@NonNull Function1<C, Boolean> predication) {
@@ -161,8 +163,8 @@ public class Callbacks<C> {
      * 如果 handler 返回 false，表示中断遍历。
      * handler 返回 true 表示继续遍历。
      */
-    public synchronized void forEach(@NonNull Function1<C, Boolean> handler) {
-        lockCallbacksThen(callbacks -> {
+    public void forEach(@NonNull Function1<C, Boolean> handler) {
+        copyCallbacksThen(callbacks -> {
             if (callbacks.isEmpty()) {
                 return;
             }
@@ -195,10 +197,28 @@ public class Callbacks<C> {
     /* Private Methods                                         */
     /* ======================================================= */
 
+    /**
+     * 锁住 callbacks 对象，然后执行 function 回调。
+     * 适用场景： function 会很快就执行完的场景。
+     */
     private void lockCallbacksThen(VoidFunction1<TreeMap<Integer, List<C>>> function) {
         synchronized (callbacks) {
             function.invoke(callbacks);
         }
+    }
+
+    /**
+     * 先把 callbacks 对象复制一份，然后执行 function 回调。
+     * 适用场景： function 会占用比较长时间的场景。
+     */
+    private void copyCallbacksThen(VoidFunction1<TreeMap<Integer, List<C>>> function) {
+        // 复制一份
+        TreeMap<Integer, List<C>> copy;
+        synchronized (callbacks) {
+            //noinspection unchecked
+            copy = (TreeMap<Integer, List<C>>)callbacks.clone();
+        }
+        function.invoke(copy);
     }
 
 

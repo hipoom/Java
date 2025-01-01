@@ -23,7 +23,7 @@ static String getProductArtifactId() {
  * 版本号。
  */
 static String getProductVersion() {
-    return "0.0.2"
+    return "0.0.3"
 }
 
 // 配置签名，上传到 central maven 必须要签名

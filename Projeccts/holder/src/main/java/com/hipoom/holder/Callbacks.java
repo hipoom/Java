@@ -34,6 +34,11 @@ public class Callbacks<C> {
      */
     private final TreeMap<Integer, List<C>> callbacks = new TreeMap<>();
 
+    /**
+     * 大小变化后的回调。
+     */
+    private final Callbacks<OnSizeChangedCallback> onSizeChangedCallbacks = new Callbacks();
+
 
 
     /* ======================================================= */
@@ -190,6 +195,14 @@ public class Callbacks<C> {
         return callbacks.size();
     }
 
+    public void addOnSizeChangedCallback(OnSizeChangedCallback callback) {
+        onSizeChangedCallbacks.add(callback);
+    }
+
+    public void removeOnSizeChangedCallback(OnSizeChangedCallback callback) {
+        onSizeChangedCallbacks.remove(callback);
+    }
+
 
 
 
@@ -230,6 +243,12 @@ public class Callbacks<C> {
     public interface HowNotify<C> {
 
         void onNotify(@NonNull C callback);
+
+    }
+
+    public interface OnSizeChangedCallback {
+
+        void onSizeChanged(int size);
 
     }
 }

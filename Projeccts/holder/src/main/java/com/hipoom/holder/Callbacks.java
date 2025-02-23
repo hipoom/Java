@@ -3,10 +3,11 @@ package com.hipoom.holder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -37,7 +38,9 @@ public class Callbacks<C> {
     /**
      * 大小变化后的回调。
      */
-    private final Callbacks<OnSizeChangedCallback> onSizeChangedCallbacks = new Callbacks();
+    private Callbacks<OnSizeChangedCallback> onSizeChangedCallbacks;
+
+    private final Object mutexForSizeChanged = new Object();
 
 
 
@@ -72,6 +75,8 @@ public class Callbacks<C> {
             }
             temp.add(callback);
         });
+
+        tryNotifySizeChanged();
     }
 
     /**
@@ -80,6 +85,7 @@ public class Callbacks<C> {
      * @param callback 希望移除的回调。
      * @return 被移除的对象。 如果是 null, 说明本来就没有添加过 callback 对象。
      */
+    @SuppressWarnings("UnusedReturnValue")
     @Nullable
     public C remove(@Nullable C callback) {
         List<C> removed = removeIf(it -> it == callback);
@@ -94,6 +100,7 @@ public class Callbacks<C> {
      */
     public void removeAll() {
         lockCallbacksThen(TreeMap::clear);
+        tryNotifySizeChanged();
     }
 
     /**
@@ -130,6 +137,8 @@ public class Callbacks<C> {
                 }
             }
         });
+
+        tryNotifySizeChanged();
 
         return removed;
     }
@@ -192,17 +201,33 @@ public class Callbacks<C> {
     }
 
     public int getSize() {
-        return callbacks.size();
+        AtomicInteger allSize = new AtomicInteger(0);
+        lockCallbacksThen(callbacks -> {
+            for (Map.Entry<Integer, List<C>> entry : callbacks.entrySet()) {
+                int size = entry.getValue().size();
+                allSize.addAndGet(size);
+            }
+        });
+        return allSize.get();
     }
 
     public void addOnSizeChangedCallback(OnSizeChangedCallback callback) {
-        onSizeChangedCallbacks.add(callback);
+        synchronized (mutexForSizeChanged) {
+            if (onSizeChangedCallbacks == null) {
+                onSizeChangedCallbacks = new Callbacks<>();
+            }
+            onSizeChangedCallbacks.add(callback);
+        }
     }
 
     public void removeOnSizeChangedCallback(OnSizeChangedCallback callback) {
-        onSizeChangedCallbacks.remove(callback);
+        synchronized (mutexForSizeChanged) {
+            if (onSizeChangedCallbacks == null) {
+                return;
+            }
+            onSizeChangedCallbacks.remove(callback);
+        }
     }
-
 
 
 
@@ -232,6 +257,17 @@ public class Callbacks<C> {
             copy = (TreeMap<Integer, List<C>>)callbacks.clone();
         }
         function.invoke(copy);
+    }
+
+    private void tryNotifySizeChanged() {
+        synchronized (mutexForSizeChanged) {
+            if (onSizeChangedCallbacks == null) {
+                return;
+            }
+
+            int size = getSize();
+            onSizeChangedCallbacks.notifyAll(it -> it.onSizeChanged(size));
+        }
     }
 
 

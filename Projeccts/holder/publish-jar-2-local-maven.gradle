@@ -5,12 +5,6 @@
 apply plugin: "maven-publish"
 apply plugin: "signing"
 
-/**
- * 返回仓库的本地路径。
- */
-static String getLocalRepositoryDirectory() {
-    return "/Users/zhp/Workspace/hipoom-maven-3";
-}
 
 /**
  * 模块名.
@@ -23,10 +17,18 @@ static String getProductArtifactId() {
  * 版本号。
  */
 static String getProductVersion() {
-    return "0.0.3"
+    return "0.0.4"
 }
 
 // 配置签名，上传到 central maven 必须要签名
+// 如果报错 "... because it has no configured signatory"，
+// 那么你需要在 <userHome>/.gradle/gradle.properties 中，添加以下内容
+// ```
+// signing.keyId=....
+// signing.password=....
+// signing.secretKeyRingFile=....
+// ```
+// 如果 <userHome>/.gradle/gradle.properties 文件不存在，则新建一个。
 signing {
     sign(publishing.publications)
 }
@@ -82,7 +84,7 @@ publishing {
     // 定义目标仓库
     repositories {
         maven {
-            url getLocalRepositoryDirectory()
+            url getLocalRepositoryDirectory(rootProject)
         }
     }
 
@@ -139,7 +141,7 @@ publishing {
  * 获取 local.properties 文件.
  * @return File
  */
-File getLocalProperties() {
+static File getLocalProperties(Project rootProject) {
     File localProperties = rootProject.file("local.properties")
     if (!localProperties.exists()) {
         throw new IllegalStateException("[ERROR] 找不到 local.properties 文件.")
@@ -150,8 +152,8 @@ File getLocalProperties() {
 /**
  * 从 local.properties 中读取 key 对应的值。
  */
-String readLocalProperty(String key) {
-    File file = getLocalProperties()
+static String readLocalProperty(Project rootProject, String key) {
+    File file = getLocalProperties(rootProject)
     InputStream is = file.newDataInputStream()
     Properties properties = new Properties()
     properties.load(is)
@@ -162,4 +164,15 @@ String readLocalProperty(String key) {
     }
 
     return properties.getProperty(key)
+}
+
+/**
+ * 返回仓库的本地路径。
+ */
+static String getLocalRepositoryDirectory(Project rootProject) {
+    String dir = readLocalProperty(rootProject, "maven.repository.publish")
+    if (dir == null || dir.isEmpty()) {
+        throw new IllegalStateException("请在 local.properties 中设置 maven.repository.publish 用作本地的发布仓库地址。")
+    }
+    return dir
 }

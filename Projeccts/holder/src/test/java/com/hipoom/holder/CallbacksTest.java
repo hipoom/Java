@@ -20,6 +20,13 @@ class CallbacksTest {
     public void testAll() {
         priority();
         find();
+        try {
+            testCopyCallbacksThen();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        testSize();
     }
 
     @Test
@@ -137,6 +144,24 @@ class CallbacksTest {
         }).start();
 
         Thread.sleep(12_000);
+    }
+
+    @Test
+    public void testSize() {
+        Callbacks<Runnable> callbacks = new Callbacks<>();
+
+
+        callbacks.add(1, () -> {});
+        callbacks.add(2, () -> {});
+        callbacks.add(3, () -> {});
+
+        callbacks.addOnSizeChangedCallback(size -> {
+            System.out.println("新 size = " + size);
+        });
+
+        callbacks.add(3, () -> {});
+
+        assert callbacks.getSize() == 4;
     }
 
 }

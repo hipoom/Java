@@ -2,6 +2,20 @@ plugins {
     id 'java'
 }
 
+// 设置 build 目录
+File localProperties = new File(projectDir, "local.properties")
+if (localProperties.exists()) {
+    FileInputStream fis = new FileInputStream(localProperties)
+    Properties properties = new Properties()
+    properties.load(fis)
+
+    String buildDirConfig = properties.getProperty("build.dir")
+    if (buildDirConfig != null && !buildDirConfig.isEmpty()) {
+        buildDir = new File(buildDirConfig)
+    }
+    fis.close()
+}
+
 group = 'com.hipoom'
 version = '0.0.2'
 
@@ -26,4 +40,8 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.addStringOption('Xdoclint:none', '-quiet')
 }

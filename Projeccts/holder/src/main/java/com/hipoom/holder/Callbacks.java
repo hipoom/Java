@@ -1,5 +1,11 @@
 package com.hipoom.holder;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.hipoom.function.Function1;
+import com.hipoom.function.VoidFunction1;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -8,11 +14,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.hipoom.function.Function1;
-import com.hipoom.function.VoidFunction1;
 
 /**
  * @author ZhengHaiPeng
@@ -40,6 +41,9 @@ public class Callbacks<C> {
      */
     private Callbacks<OnSizeChangedCallback> onSizeChangedCallbacks;
 
+    /**
+     * 用于保证 {@link #onSizeChangedCallbacks} 线程安全的锁。
+     */
     private final Object mutexForSizeChanged = new Object();
 
 

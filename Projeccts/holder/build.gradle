@@ -16,6 +16,9 @@ if (localProperties.exists()) {
     fis.close()
 }
 
+setSourceCompatibility(JavaVersion.VERSION_1_8)
+setTargetCompatibility(JavaVersion.VERSION_1_8)
+
 group = 'com.hipoom'
 version = '0.0.2'
 

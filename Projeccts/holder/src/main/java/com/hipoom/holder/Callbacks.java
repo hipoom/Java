@@ -80,7 +80,8 @@ public class Callbacks<C> {
             temp.add(callback);
         });
 
-        tryNotifySizeChanged();
+        int size = getSize();
+        tryNotifySizeChanged(size - 1, size);
     }
 
     /**
@@ -103,8 +104,9 @@ public class Callbacks<C> {
      * 移除所有。
      */
     public void removeAll() {
+        int size = getSize();
         lockCallbacksThen(TreeMap::clear);
-        tryNotifySizeChanged();
+        tryNotifySizeChanged(size, 0);
     }
 
     /**
@@ -142,7 +144,8 @@ public class Callbacks<C> {
             }
         });
 
-        tryNotifySizeChanged();
+        int size = getSize();
+        tryNotifySizeChanged(size + removed.size(), size);
 
         return removed;
     }
@@ -263,14 +266,12 @@ public class Callbacks<C> {
         function.invoke(copy);
     }
 
-    private void tryNotifySizeChanged() {
+    private void tryNotifySizeChanged(int oldSize, int newSize) {
         synchronized (mutexForSizeChanged) {
             if (onSizeChangedCallbacks == null) {
                 return;
             }
-
-            int size = getSize();
-            onSizeChangedCallbacks.notifyAll(it -> it.onSizeChanged(size));
+            onSizeChangedCallbacks.notifyAll(it -> it.onSizeChanged(oldSize, newSize));
         }
     }
 
@@ -288,7 +289,7 @@ public class Callbacks<C> {
 
     public interface OnSizeChangedCallback {
 
-        void onSizeChanged(int size);
+        void onSizeChanged(int oldSize, int newSize);
 
     }
 }
